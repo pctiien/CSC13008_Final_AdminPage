@@ -1,57 +1,199 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Pencil, Trash2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Plus, Search, Pencil, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 
 const ProductList = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [manufacturers, setManufacturers] = useState([]);
+  const [productCategories, setProductCategories] = useState([]);
+  const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  
+  // Get initial states from URL parameters
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [filterCategory, setFilterCategory] = useState(searchParams.get('category') || '');
+  const [filterManufacturer, setFilterManufacturer] = useState(searchParams.get('manufacturer') || '');
+  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page')) || 1);
+  const [sortConfig, setSortConfig] = useState({
+    field: searchParams.get('sortField') || 'created_at',
+    direction: searchParams.get('sortDir') || 'desc'
+  });
+  
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = async () => {
-    try {
-      const response = await axios.get('http://localhost:3000/products/json');
-      const data = response.data;
-      // Transform the data to match the exact model field names
-      const transformedData = data.map(product => ({
-        id: product.product_id,
-        name: product.product_name,
-        category: product.categories?.[0]?.category_name || 'Uncategorized',
-        manufacturer: product.Manufacturer?.m_name || 'Unknown',
-        price: product.price,
-        stock: product.remaining,
-        status: product.Status?.status_name || 'Unknown',
-        image: product.img
-      }));
-      
-      // Extract unique categories for the filter dropdown
-      const uniqueCategories = [...new Set(data.flatMap(product => 
-        product.categories?.map(cat => cat.category_name) || []
-      ))];
-      setCategories(uniqueCategories);
-      setProducts(transformedData);
-      setError(null);
-    } catch (err) {
-      setError('Error loading products. Please try again later.');
-      console.error('Error fetching products:', err);
-    } finally {
-      setLoading(false);
-    }
+  // Update URL when filters change
+  const updateURLParams = (params) => {
+    const newParams = new URLSearchParams(searchParams);
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) {
+        newParams.set(key, value);
+      } else {
+        newParams.delete(key);
+      }
+    });
+    
+    setSearchParams(newParams);
   };
 
-  // Rest of the component remains the same
+  // Update search parameter
+  useEffect(() => {
+    updateURLParams({ search: searchTerm });
+  }, [searchTerm]);
+
+  // Update filter parameters
+  useEffect(() => {
+    updateURLParams({ 
+      category: filterCategory,
+      manufacturer: filterManufacturer
+    });
+  }, [filterCategory, filterManufacturer]);
+
+  // Update sort parameters
+  useEffect(() => {
+    updateURLParams({ 
+      sortField: sortConfig.field,
+      sortDir: sortConfig.direction
+    });
+  }, [sortConfig]);
+
+  // Update page parameter
+  useEffect(() => {
+    updateURLParams({ page: currentPage.toString() });
+  }, [currentPage]);
+
+  useEffect(() => {
+    const fetchAllData = async () => {
+      try {
+        const [
+          productsRes, 
+          categoriesRes, 
+          manufacturersRes,
+          productCategoriesRes,
+          statusesRes
+        ] = await Promise.all([
+          axios.get('http://localhost:3000/products/json'),
+          axios.get('http://localhost:3000/categories/api'),
+          axios.get('http://localhost:3000/manufacturers/api'),
+          axios.get('http://localhost:3000/products/product-categories/api'),
+          axios.get('http://localhost:3000/statuses/api')
+        ]);
+
+        // Create lookup maps
+        const categoryMap = new Map(
+          categoriesRes.data.map(cat => [cat.category_id, cat.category_name])
+        );
+        const manufacturerMap = new Map(
+          manufacturersRes.data.map(mfr => [mfr.manufacturer_id, mfr.m_name])
+        );
+        const statusMap = new Map(
+          statusesRes.data
+            .filter(status => status.status_type === "PRODUCT")
+            .map(status => [status.status_id, status.status_name])
+        );
+
+        // Create product-category lookup
+        const productCategoryMap = new Map();
+        productCategoriesRes.data.forEach(pc => {
+          const categories = productCategoryMap.get(pc.product_id) || [];
+          if (categoryMap.has(pc.category_id)) {
+            categories.push(categoryMap.get(pc.category_id));
+          }
+          productCategoryMap.set(pc.product_id, categories);
+        });
+
+        // Transform the products data
+        const transformedData = productsRes.data.map(product => ({
+          id: product.product_id,
+          name: product.product_name,
+          category: productCategoryMap.get(product.product_id)?.join(', ') || 'Uncategorized',
+          manufacturer: product.manufacturer_id 
+            ? manufacturerMap.get(product.manufacturer_id) 
+            : 'Unknown',
+          manufacturer_id: product.manufacturer_id,
+          price: product.price,
+          stock: product.remaining,
+          status: product.status_id 
+            ? statusMap.get(product.status_id) 
+            : 'Unknown',
+          image: product.img,
+          created_at: new Date(product.created_at)
+        }));
+
+        setCategories(categoriesRes.data);
+        setManufacturers(manufacturersRes.data);
+        setProductCategories(productCategoriesRes.data);
+        setStatuses(statusesRes.data.filter(status => status.status_type === "PRODUCT"));
+        setProducts(transformedData);
+        setError(null);
+      } catch (err) {
+        setError('Error loading data. Please try again later.');
+        console.error('Error fetching data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
+  }, []);
+
+  const handleSort = (field) => {
+    setSortConfig(prevConfig => ({
+      field,
+      direction: prevConfig.field === field && prevConfig.direction === 'asc' ? 'desc' : 'asc'
+    }));
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleCategoryChange = (e) => {
+    setFilterCategory(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleManufacturerChange = (e) => {
+    setFilterManufacturer(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const getSortIcon = (field) => {
+    if (sortConfig.field !== field) return null;
+    return sortConfig.direction === 'asc' ? <ChevronUp size={16} /> : <ChevronDown size={16} />;
+  };
+
+  const sortProducts = (products) => {
+    return [...products].sort((a, b) => {
+      const aValue = a[sortConfig.field];
+      const bValue = b[sortConfig.field];
+      
+      if (sortConfig.field === 'created_at') {
+        return sortConfig.direction === 'asc' 
+          ? aValue - bValue 
+          : bValue - aValue;
+      }
+      
+      if (sortConfig.field === 'price') {
+        return sortConfig.direction === 'asc' 
+          ? aValue - bValue 
+          : bValue - aValue;
+      }
+      
+      return 0;
+    });
+  };
+
   const getStatusColor = (status) => {
-    switch (status) {
+    switch (status?.toUpperCase()) {
       case 'IN_STOCK':
         return 'bg-green-100 text-green-800';
       case 'LOW_STOCK':
@@ -71,6 +213,7 @@ const ProductList = () => {
   };
 
   const formatStatusDisplay = (status) => {
+    if (!status) return 'Unknown';
     return status
       .split('_')
       .map(word => word.charAt(0) + word.slice(1).toLowerCase())
@@ -81,16 +224,20 @@ const ProductList = () => {
     navigate('/add-product');
   };
 
-  const filteredProducts = products.filter(product => 
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (filterCategory === '' || product.category === filterCategory)
-  );
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = filterCategory === '' || product.category.includes(filterCategory);
+    const matchesManufacturer = filterManufacturer === '' || product.manufacturer_id === parseInt(filterManufacturer);
+    return matchesSearch && matchesCategory && matchesManufacturer;
+  });
+
+  const sortedProducts = sortProducts(filteredProducts);
 
   // Calculate pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const currentItems = sortedProducts.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedProducts.length / itemsPerPage);
 
   if (loading) {
     return (
@@ -130,18 +277,34 @@ const ProductList = () => {
             placeholder="Search products..."
             className="pl-10 w-full p-2 border rounded-lg"
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={handleSearchChange}
           />
         </div>
         <div className="w-48">
           <select
             className="w-full p-2 border rounded-lg"
             value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
+            onChange={handleCategoryChange}
           >
             <option value="">All Categories</option>
             {categories.map(category => (
-              <option key={category} value={category}>{category}</option>
+              <option key={category.category_id} value={category.category_name}>
+                {category.category_name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="w-48">
+          <select
+            className="w-full p-2 border rounded-lg"
+            value={filterManufacturer}
+            onChange={handleManufacturerChange}
+          >
+            <option value="">All Manufacturers</option>
+            {manufacturers.map(manufacturer => (
+              <option key={manufacturer.manufacturer_id} value={manufacturer.manufacturer_id}>
+                {manufacturer.m_name}
+              </option>
             ))}
           </select>
         </div>
@@ -156,9 +319,20 @@ const ProductList = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Manufacturer</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer flex items-center gap-1"
+                  onClick={() => handleSort('price')}
+                >
+                  Price {getSortIcon('price')}
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer flex items-center gap-1"
+                  onClick={() => handleSort('created_at')}
+                >
+                  Created At {getSortIcon('created_at')}
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
@@ -175,6 +349,9 @@ const ProductList = () => {
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(product.status)}`}>
                       {formatStatusDisplay(product.status)}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {product.created_at.toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button className="text-violet-600 hover:text-violet-900 mr-3">
@@ -213,9 +390,9 @@ const ProductList = () => {
               <p className="text-sm text-gray-700">
                 Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to{' '}
                 <span className="font-medium">
-                  {Math.min(indexOfLastItem, filteredProducts.length)}
+                  {Math.min(indexOfLastItem, sortedProducts.length)}
                 </span>{' '}
-                of <span className="font-medium">{filteredProducts.length}</span> results
+                of <span className="font-medium">{sortedProducts.length}</span> results
               </p>
             </div>
             <div>
