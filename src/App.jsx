@@ -8,6 +8,7 @@ import AccountDetails from "./page/account/AccountDetails";
 import CategoryList from "./page/category/CategoryList";
 import ManufacturerList from "./page/manufacturer/ManufacturerList";
 import OrderList from "./page/order/OrderList";
+import EditProduct from "./page/product/EditProduct";
 import ProductList from "./page/product/ProductList";
 import AddProduct from "./page/product/AddProduct";
 import AdminProfile from "./page/profile/AdminProfile";
@@ -32,6 +33,7 @@ function App() {
                 <Route path="/order" element={<OrderList />} />
                 <Route path="/product" element={<ProductList />} />
                 <Route path="/add-product" element={<AddProduct />} />
+                <Route path="/edit-product/:id" element={<EditProduct />} />
                 <Route path="/admin-profile" element={<AdminProfile />} />
                 <Route path="/revenue-product" element={<RevenueProduct />} />
                 <Route path="/top-revenue-product" element={<TopRevenueProduct />} />

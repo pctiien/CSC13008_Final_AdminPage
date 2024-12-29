@@ -12,6 +12,13 @@ export const useProductData = () => {
     error: null
   });
 
+  const removeProduct = (productId) => {
+    setData(prev => ({
+      ...prev,
+      products: prev.products.filter(product => product.id !== productId)
+    }));
+  };
+
   useEffect(() => {
     const fetchAllData = async () => {
       try {
@@ -54,7 +61,7 @@ export const useProductData = () => {
 
         // Transform the products data
         const transformedProducts = productsRes.data.map(product => ({
-          id: product.product_id,
+          id: product.product_id, // Keep the same id format throughout
           name: product.product_name,
           category: productCategoryMap.get(product.product_id)?.join(', ') || 'Uncategorized',
           manufacturer: product.manufacturer_id 
@@ -92,5 +99,5 @@ export const useProductData = () => {
     fetchAllData();
   }, []);
 
-  return data;
+  return { ...data, removeProduct };
 };

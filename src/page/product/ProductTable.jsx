@@ -1,12 +1,28 @@
 import React from 'react';
 import { Pencil, Trash2, ChevronUp, ChevronDown, ArrowUpDown } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { getStatusColor, formatStatusDisplay } from '../../utils/productUtils';
+import axios from 'axios';
 
 const ProductTable = ({ 
   products, 
   sortConfig, 
-  onSort 
+  onSort,
+  onProductDeleted
 }) => {
+  const navigate = useNavigate();
+  const handleDelete = async (productId) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      try {
+        await axios.delete(`http://localhost:3000/products/json/${productId}`);
+        onProductDeleted(productId);
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        alert('Failed to delete product. Please try again.');
+      }
+    }
+  };
+
   const getSortIcon = (field) => {
     if (sortConfig.field !== field) {
       return <ArrowUpDown size={16} className="text-gray-400" />;
@@ -60,10 +76,13 @@ const ProductTable = ({
                 {product.created_at.toLocaleDateString()}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <button className="text-violet-600 hover:text-violet-900 mr-3">
+                <button className="text-violet-600 hover:text-violet-900 mr-3" onClick={() => navigate(`/edit-product/${product.id}`)}>
                   <Pencil size={18} />
                 </button>
-                <button className="text-red-600 hover:text-red-900">
+                <button 
+                  className="text-red-600 hover:text-red-900"
+                  onClick={() => handleDelete(product.id)}
+                >
                   <Trash2 size={18} />
                 </button>
               </td>

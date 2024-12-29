@@ -22,7 +22,7 @@ const ProductList = () => {
   });
   
   const itemsPerPage = 10;
-  const { products, categories, manufacturers, loading, error } = useProductData();
+  const { products, categories, manufacturers, loading, error, removeProduct } = useProductData();
 
   // Update URL when filters change
   const updateURLParams = (params) => {
@@ -89,6 +89,10 @@ const ProductList = () => {
     navigate('/add-product');
   };
 
+  const handleProductDeleted = (deletedProductId) => {
+    removeProduct(deletedProductId);
+  };
+
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === '' || product.category.includes(filterCategory);
@@ -150,6 +154,7 @@ const ProductList = () => {
           products={currentItems}
           sortConfig={sortConfig}
           onSort={handleSort}
+          onProductDeleted={handleProductDeleted}
         />
 
         <Pagination

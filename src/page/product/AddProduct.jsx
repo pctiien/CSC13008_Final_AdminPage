@@ -107,11 +107,6 @@ const AddProduct = () => {
       errors.push('Description must be at least 10 characters long');
     }
     
-    // Validate images
-    if (images.length === 0) {
-      errors.push('Please upload at least one product image');
-    }
-  
     // Validate image sizes
     const maxSize = 5 * 1024 * 1024; // 5MB
     const invalidSizeImages = images.filter(img => img.size > maxSize);
@@ -150,7 +145,7 @@ const AddProduct = () => {
         formDataToSend.append('images', image);
       });
   
-      const response = await axios.post('http://localhost:3000/products', formDataToSend, {
+      const response = await axios.post('http://localhost:3000/products/json', formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
