@@ -8,6 +8,8 @@ const EditProduct = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -16,7 +18,8 @@ const EditProduct = () => {
     status: '',
     category: '',
     manufacturer: '',
-    photos: []
+    photos: [],
+    newPhotos: []
   });
   
   const [categories, setCategories] = useState([]);
@@ -51,11 +54,10 @@ const EditProduct = () => {
           price: productRes.data.price,
           stock: productRes.data.remaining,
           status: productRes.data.status_id,
-          category: productCategoryIds[0], // For single select, use the first category
-          // OR for multi-select:
-          // categories: productCategoryIds,
+          category: productCategoryIds[0],
           manufacturer: productRes.data.manufacturer_id,
-          photos: productRes.data.photos || []
+          photos: productRes.data.photos || [],
+          newPhotos: []
         });
   
         setCategories(categoriesRes.data);
@@ -74,12 +76,46 @@ const EditProduct = () => {
   const validateForm = () => {
     const errors = {};
     
-    if (!formData.name?.trim()) errors.name = 'Name is required';
-    if (!formData.price || formData.price <= 0) errors.price = 'Valid price is required';
-    if (!formData.stock || formData.stock < 0) errors.stock = 'Valid stock quantity is required';
-    if (!formData.status) errors.status = 'Status is required';
-    if (!formData.manufacturer) errors.manufacturer = 'Manufacturer is required';
-    if (!formData.category) errors.category = 'Category is required';
+    // Validate product name
+    if (!formData.name || formData.name.trim().length < 2) {
+      errors.name = 'Product name must be at least 2 characters long';
+    }
+    
+    // Validate price
+    const price = parseFloat(formData.price);
+    if (!price || isNaN(price) || price <= 0) {
+      errors.price = 'Price must be a positive number';
+    }
+    
+    // Validate stock
+    const stock = parseInt(formData.stock);
+    if (isNaN(stock) || stock < 0) {
+      errors.stock = 'Stock must be a non-negative number';
+    }
+    
+    // Validate status
+    if (!formData.status) {
+      errors.status = 'Please select a status';
+    }
+    
+    // Validate manufacturer
+    if (!formData.manufacturer) {
+      errors.manufacturer = 'Please select a manufacturer';
+    }
+    
+    // Validate category
+    if (!formData.category) {
+      errors.category = 'Please select a category';
+    }
+
+    // Validate photo sizes if new photos are being uploaded
+    if (formData.newPhotos && formData.newPhotos.length > 0) {
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      const invalidSizePhotos = formData.newPhotos.filter(photo => photo.size > maxSize);
+      if (invalidSizePhotos.length > 0) {
+        errors.photos = 'Some images exceed the 5MB size limit';
+      }
+    }
 
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
@@ -100,28 +136,12 @@ const EditProduct = () => {
     }
   };
 
-  const handlePhotoUpload = async (e) => {
+  const handlePhotoUpload = (e) => {
     const files = Array.from(e.target.files);
-    const formData = new FormData();
-    
-    files.forEach(file => {
-      formData.append('photos', file);
-    });
-
-    try {
-      const response = await axios.post(`http://localhost:3000/products/${id}/photos`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      
-      setFormData(prev => ({
-        ...prev,
-        photos: [...prev.photos, ...response.data.photos]
-      }));
-    } catch (err) {
-      setError('Failed to upload photos');
-    }
+    setFormData(prev => ({
+      ...prev,
+      newPhotos: [...prev.newPhotos, ...files]
+    }));
   };
 
   const handleRemovePhoto = async (photoId) => {
@@ -136,24 +156,53 @@ const EditProduct = () => {
     }
   };
 
+  const handleRemoveNewPhoto = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      newPhotos: prev.newPhotos.filter((_, i) => i !== index)
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setError('');
+    setSuccess('');
     
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
-      await axios.put(`http://localhost:3000/products/json/${id}`, {
-        product_name: formData.name,
-        price: formData.price,
-        remaining: formData.stock,
-        status_id: formData.status,
-        category_id: formData.category,
-        manufacturer_id: formData.manufacturer
+      const formDataToSend = new FormData();
+      formDataToSend.append('product_name', formData.name);
+      formDataToSend.append('price', formData.price);
+      formDataToSend.append('remaining', formData.stock);
+      formDataToSend.append('status_id', formData.status);
+      formDataToSend.append('category_id', formData.category);
+      formDataToSend.append('manufacturer_id', formData.manufacturer);
+
+      if (formData.newPhotos.length > 0) {
+        formData.newPhotos.forEach(photo => {
+          formDataToSend.append('photos', photo);
+        });
+      }
+
+      await axios.put(`http://localhost:3000/products/json/${id}`, formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
       });
 
-      navigate('/product');
+      setSuccess('Product updated successfully!');
+      setTimeout(() => {
+        navigate('/product');
+      }, 1500);
     } catch (err) {
-      setError('Failed to update product');
+      setError(err.response?.data?.message || 'Failed to update product');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -180,6 +229,12 @@ const EditProduct = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Edit Product</h1>
       </div>
+
+      {success && (
+        <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+          {success}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6">
         <div className="grid grid-cols-2 gap-6">
@@ -323,6 +378,7 @@ const EditProduct = () => {
           </label>
           
           <div className="grid grid-cols-4 gap-4 mb-4">
+            {/* Existing Photos */}
             {formData.photos.map(photo => (
               <div key={photo.id} className="relative">
                 <img
@@ -333,6 +389,24 @@ const EditProduct = () => {
                 <button
                   type="button"
                   onClick={() => handleRemovePhoto(photo.id)}
+                  className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ))}
+            
+            {/* New Photos Preview */}
+            {formData.newPhotos.map((photo, index) => (
+              <div key={index} className="relative">
+                <img
+                  src={URL.createObjectURL(photo)}
+                  alt={`New preview ${index + 1}`}
+                  className="w-full h-32 object-cover rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveNewPhoto(index)}
                   className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
                 >
                   <X size={16} />
@@ -354,6 +428,9 @@ const EditProduct = () => {
               />
             </label>
           </div>
+          {validationErrors.photos && (
+            <p className="mt-2 text-sm text-red-500">{validationErrors.photos}</p>
+          )}
         </div>
 
         {/* Submit Button */}
@@ -367,9 +444,10 @@ const EditProduct = () => {
           </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700"
+            disabled={isSubmitting}
+            className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50"
           >
-            Save Changes
+            {isSubmitting ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </form>
