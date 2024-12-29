@@ -24,7 +24,6 @@ const AddProduct = () => {
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Your existing handlers remain the same
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -68,12 +67,74 @@ const AddProduct = () => {
     setError('');
   };
 
+  const validateForm = () => {
+    const errors = [];
+    
+    // Validate product name
+    if (!formData.name || formData.name.trim().length < 2) {
+      errors.push('Product name must be at least 2 characters long');
+    }
+    
+    // Validate price
+    const price = parseFloat(formData.price);
+    if (!price || isNaN(price) || price <= 0) {
+      errors.push('Price must be a positive number');
+    }
+    
+    // Validate stock
+    const stock = parseInt(formData.stock);
+    if (isNaN(stock) || stock < 0) {
+      errors.push('Stock must be a non-negative number');
+    }
+    
+    // Validate status
+    if (!formData.status_id) {
+      errors.push('Please select a status');
+    }
+    
+    // Validate manufacturer
+    if (!formData.manufacturer_id) {
+      errors.push('Please select a manufacturer');
+    }
+    
+    // Validate categories
+    if (!formData.categories || formData.categories.length === 0) {
+      errors.push('Please select at least one category');
+    }
+    
+    // Validate description
+    if (!formData.description || formData.description.trim().length < 10) {
+      errors.push('Description must be at least 10 characters long');
+    }
+    
+    // Validate images
+    if (images.length === 0) {
+      errors.push('Please upload at least one product image');
+    }
+  
+    // Validate image sizes
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const invalidSizeImages = images.filter(img => img.size > maxSize);
+    if (invalidSizeImages.length > 0) {
+      errors.push('Some images exceed the 5MB size limit');
+    }
+  
+    return errors;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
     setSuccess('');
-
+  
+    const validationErrors = validateForm();
+    if (validationErrors.length > 0) {
+      setError(validationErrors.join('\n'));
+      setIsSubmitting(false);
+      return;
+    }
+  
     try {
       const formDataToSend = new FormData();
       
@@ -84,20 +145,20 @@ const AddProduct = () => {
           formDataToSend.append(key, value);
         }
       });
-
+  
       images.forEach(image => {
         formDataToSend.append('images', image);
       });
-
+  
       const response = await axios.post('http://localhost:3000/products', formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
-
+  
       if (response.data.success) {
         setSuccess('Product created successfully! You can continue adding more products.');
-        resetForm(); // Reset the form for the next entry
+        resetForm();
       } else {
         setError(response.data.message || 'Error creating product');
       }
