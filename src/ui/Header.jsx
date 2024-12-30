@@ -8,7 +8,7 @@ const Header = ({ toggleNavBar, isNavBarOpen }) => {
 
 
     return (
-        <div className=" w-full bg-gray-50 z-50 fixed  ">
+        <div className=" w-full bg-gray-50 z-50 fixed block  ">
             <div className=" flex justify-start items-center py-2 ">
                 <div>
                     {/* Toggle NavBar Button */}
