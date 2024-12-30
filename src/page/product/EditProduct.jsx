@@ -146,13 +146,43 @@ const EditProduct = () => {
 
   const handleRemovePhoto = async (photoId) => {
     try {
-      await axios.delete(`http://localhost:3000/products/${id}/photos/${photoId}`);
-      setFormData(prev => ({
-        ...prev,
-        photos: prev.photos.filter(photo => photo.id !== photoId)
-      }));
+      if (photoId === 'main') {
+        const response = await axios.delete(`http://localhost:3000/products/json/${id}/photo/main`);
+        
+        setFormData(prev => {
+          const updatedPhotos = prev.photos.filter(photo => photo.id !== 'main');  
+          if (response.data.newMainPhoto) {
+            const newMainPhotoIndex = updatedPhotos.findIndex(
+              photo => photo.url.endsWith(response.data.newMainPhoto)
+            );
+            
+            if (newMainPhotoIndex !== -1) {
+              const [photo] = updatedPhotos.splice(newMainPhotoIndex, 1);
+              return {
+                ...prev,
+                photos: [
+                  { id: 'main', url: photo.url },
+                  ...updatedPhotos
+                ]
+              };
+            }
+          }
+          
+          return {
+            ...prev,
+            photos: updatedPhotos
+          };
+        });
+      } else {
+        await axios.delete(`http://localhost:3000/products/json/${id}/photos/${photoId}`);
+        setFormData(prev => ({
+          ...prev,
+          photos: prev.photos.filter(photo => photo.id !== photoId)
+        }));
+      }
     } catch (err) {
       setError('Failed to remove photo');
+      console.error('Error removing photo:', err);
     }
   };
 
