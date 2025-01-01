@@ -6,9 +6,11 @@ import { Avatar, AvatarImage, AvatarFallback } from "../../components/Avatar"
 import { Switch } from "../../components/Switch"
 import userService from '../../service/userService'
 import Pagination from '../../components/Pagination'
+import SearchBar from '../../components/SearchBar'
 
-function UserTable() {
+function AccountList() {
   const [users, setUsers] = useState([])
+
 
   const [selectedPage, setSelectedPage] = useState(1)
   const onPageChange = (page)=>{
@@ -16,17 +18,36 @@ function UserTable() {
   }
 
   const [totalPage,setTotalPage] = useState(0)
+
+  const [searchKey,setSearchKey] = useState('')
+
+  const [sortConfig, setSortConfig] = useState({
+    field: 'created_at', 
+    direction: 'DESC'
+  })
+  
+
   const fetchUserData = async()=>{
-    const result = await userService.getAllUsers(selectedPage,10)
+    const result = await userService.getAllUsers(selectedPage,10,searchKey,sortConfig.field,sortConfig.direction)
     if(result.data)
     {
       setUsers(result.data.data)
       setTotalPage(result.data.totalPage)
     }
   }
+
+
+  const handleSort = (field) => {
+    setSortConfig(prevConfig => ({
+      field,
+      direction: prevConfig.field === field && prevConfig.direction === 'ASC' ? 'DESC' : 'ASC'
+    }));
+    setSelectedPage(1);
+  };
+
   useEffect(()=>{
     fetchUserData()
-  },[selectedPage])
+  },[selectedPage,searchKey,sortConfig])
 
 
   const toggleBan = (userId) => {
@@ -52,21 +73,34 @@ function UserTable() {
       return false;  
     }
   };
-
+  const onSearchInputChange = (value)=>{
+    console.log(value)
+    setSearchKey(value)
+  }
   return (
-    <div className="rounded-lg border bg-white shadow-sm">
+
+    <div>
+      <SearchBar onChange={onSearchInputChange} placeHolder ="Filter by name or email..."></SearchBar>
+      <div className="rounded-lg border bg-white shadow-sm mt-2"> 
       <div className="relative w-full overflow-auto">
         <table className="w-full caption-bottom text-sm">
           <thead>
             <tr className="border-b bg-gray-50">
-              <th className="h-12 px-4 text-left align-middle font-medium text-gray-500">
-                User name
+              <th 
+              onClick={()=>handleSort('user_name')}
+              className="h-12 px-4 text-left align-middle font-medium text-gray-500">
+                User name {sortConfig.field === 'user_name' && (sortConfig.direction === 'ASC' ? '▲' : '▼')}
               </th>
-              <th className="h-12 px-4 text-left align-middle font-medium text-gray-500">
-                Email
+              <th 
+              onClick={() => handleSort('email')}
+              className="h-12 px-4 text-left align-middle font-medium text-gray-500">
+                Email {sortConfig.field === 'email' && (sortConfig.direction === 'ASC' ? '▲' : '▼')}
+
               </th>
-              <th className="h-12 px-4 text-left align-middle font-medium text-gray-500">
-                Registration Time
+              <th 
+              onClick={() => handleSort('created_at')}
+              className="h-12 px-4 text-left align-middle font-medium text-gray-500">
+                Registration Time {sortConfig.field === 'created_at' && (sortConfig.direction === 'ASC' ? '▲' : '▼')}
               </th>
               <th className="h-12 px-4 text-left align-middle font-medium text-gray-500">
                 Status
@@ -131,8 +165,9 @@ function UserTable() {
       <Pagination onPageChange={onPageChange} currentPage={selectedPage} totalPage={totalPage} limit={10}></Pagination>
       </div>
     </div>
+    </div>
   )
 }
 
-export default UserTable
+export default AccountList
 
