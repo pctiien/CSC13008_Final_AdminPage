@@ -14,17 +14,19 @@ function AccountList() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const handleCloseDialog = () => {
     setDialogOpen(false)
-    setSelectedUser(null)
+    setSelectedUserId(null)
   }
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState([])
 
-  const [selectedUser, setSelectedUser] = useState(null)
-  const handleViewDetails = (user)=>{
-    setSelectedUser(user)
+  const [selectedUserId, setSelectedUserId] = useState(null)
+  const handleViewDetails = (userId,event)=>{
+    if (event.target.closest('.switch-container')) {
+      return;
+    }
+    setSelectedUserId(userId)
     setDialogOpen(true)
-    console.log(user)
 
   }
 
@@ -80,11 +82,23 @@ function AccountList() {
     fetchUserData()
   },[selectedPage,searchKey,sortConfig])
 
+  const handleSwitchClick = (event) => {
+    event.stopPropagation();  
+  }
+  const toggleBan = async(userId) => {
+    try{
 
-  const toggleBan = (userId) => {
-    setUsers(users.map(user => 
-      user.id === userId ? { ...user, banned: !user.banned } : user
-    ))
+      const result = await userService.toggleBanUser(userId)
+      if(result)
+      {
+        fetchUserData()
+      }
+
+    }catch(err)
+    {
+      console.error(err)
+
+    }
   }
 
   const getInitials = (name) => {
@@ -146,7 +160,7 @@ function AccountList() {
           <tbody>
             {users.map((user, index) => (
               <tr
-                onClick={() => handleViewDetails(user)}
+                onClick={() => handleViewDetails(user.user_id)}
                 key={index}
                 className={`
                   border-b transition-colors hover:bg-blue-50/50
@@ -176,22 +190,26 @@ function AccountList() {
                   {format(new Date(user.created_at), 'PPp')}
                 </td>
                 <td className="p-4 align-middle">
-                  <div className="flex items-center gap-2">
+                  <div 
+                  onClick={handleSwitchClick}
+                  className="flex items-center gap-2 switch-container">
                     <Switch
-                      checked={user.banned}
-                      onCheckedChange={() => toggleBan(user.id)}
+                      checked={user.is_banned}
+                      onCheckedChange={() => {
+                        toggleBan(user.user_id);  
+                      }}
                       aria-label={`Ban ${user.user_name}`}
                     />
                     <span 
                       className={`
                         inline-flex items-center rounded-full px-2 py-1 text-xs font-medium
-                        ${user.banned 
+                        ${user.is_banned 
                           ? 'bg-red-100 text-red-700' 
                           : 'bg-green-100 text-green-700'
                         }
                       `}
                     >
-                      {user.banned ? "Banned" : "Active"}
+                      {user.is_banned ? "Banned" : "Active"}
                     </span>
                   </div>
                 </td>
@@ -204,9 +222,9 @@ function AccountList() {
       <Pagination onPageChange={onPageChange} currentPage={selectedPage} totalPage={totalPage} limit={10}></Pagination>
       </div>
     </div>
-    {selectedUser && (
+    {selectedUserId && (
         <AccountDetails
-          user={selectedUser} 
+          userId={selectedUserId} 
           isOpen={dialogOpen}
           onClose={handleCloseDialog}
         />

@@ -27,7 +27,6 @@ function App() {
               {/* Các route có AppLayout và NavBar */}
               <Route path="/" element={<AppLayout />}>
                 <Route index element={<AccountList />} />
-                <Route path="/account-details" element={<AccountDetails />} />
                 <Route path="/manufacturer" element={<ManufacturerList />} />
                 <Route path="/category" element={<CategoryList />} />
                 <Route path="/order" element={<OrderList />} />

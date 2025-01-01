@@ -9,19 +9,8 @@ const NavBar = ({ isOpen }) => {
     const [navState, setNavState] = useState([
         {
             title: 'Account',
+            redirect: '/',
             icon: 'src/assets/account.svg',
-            subItems: [
-                {
-                    id: 1,
-                    title: 'Account List',
-                    ref: '/'
-                },
-                {
-                    id: 2,
-                    title: 'Account Details',
-                    ref: '/account-details'
-                },
-            ],
         },
         {
             title: 'Product',

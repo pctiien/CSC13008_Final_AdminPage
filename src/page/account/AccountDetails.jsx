@@ -2,8 +2,22 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/Dialog'
 import { Avatar, AvatarImage, AvatarFallback } from "../../components/Avatar"
+import React from "react"
+import userService from '../../service/userService'
+const AccountDetails = ({ userId,isOpen,onClose }) =>{
 
-const AccountDetails = ({ user,isOpen,onClose }) =>{
+  const [user,setUser] = React.useState(null)
+  const fetchUser = async()=>{
+    const result = await userService.getUserDetails(userId)
+    if(result.data.data)
+    {
+        setUser(result.data.data)
+    }
+  }
+  React.useEffect(()=>{
+    fetchUser()
+  },[userId])
+
   // Get initials for avatar fallback
   const getInitials = (name) => {
     return name
@@ -31,6 +45,9 @@ const AccountDetails = ({ user,isOpen,onClose }) =>{
       return false;  
     }
   };
+
+  if(!user) return null 
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
