@@ -7,23 +7,30 @@ import { Switch } from "../../components/Switch"
 import userService from '../../service/userService'
 import Pagination from '../../components/Pagination'
 import SearchBar from '../../components/SearchBar'
+import {useSearchParams } from 'react-router-dom';
 
 function AccountList() {
+
+  const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState([])
 
 
   const [selectedPage, setSelectedPage] = useState(1)
   const onPageChange = (page)=>{
     setSelectedPage(page)
+    setSearchParams(prev => {
+      prev.set("page", page)
+      return prev
+    })
   }
 
   const [totalPage,setTotalPage] = useState(0)
 
-  const [searchKey,setSearchKey] = useState('')
+  const [searchKey, setSearchKey] = useState(searchParams.get("search") || "")
 
   const [sortConfig, setSortConfig] = useState({
-    field: 'created_at', 
-    direction: 'DESC'
+    field: searchParams.get("sortBy") || 'created_at', 
+    direction: searchParams.get("sortOrder") || 'DESC'
   })
   
 
@@ -38,11 +45,22 @@ function AccountList() {
 
 
   const handleSort = (field) => {
+
+    const newDirection = sortConfig.field === field && sortConfig.direction === 'ASC' ? 'DESC' : 'ASC'
+
     setSortConfig(prevConfig => ({
       field,
-      direction: prevConfig.field === field && prevConfig.direction === 'ASC' ? 'DESC' : 'ASC'
+      direction: newDirection
     }));
+
     setSelectedPage(1);
+
+    setSearchParams(prev => {
+      prev.set("sortBy", field)
+      prev.set("sortOrder", newDirection)
+      prev.set("page", 1)
+      return prev
+    })
   };
 
   useEffect(()=>{
@@ -74,8 +92,13 @@ function AccountList() {
     }
   };
   const onSearchInputChange = (value)=>{
-    console.log(value)
     setSearchKey(value)
+
+    setSearchParams(prev => {
+      prev.set("search", value)
+      return prev
+    })
+
   }
   return (
 
