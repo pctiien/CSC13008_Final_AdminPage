@@ -8,12 +8,25 @@ import userService from '../../service/userService'
 import Pagination from '../../components/Pagination'
 import SearchBar from '../../components/SearchBar'
 import {useSearchParams } from 'react-router-dom';
-
+import AccountDetails from './AccountDetails'
 function AccountList() {
+
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const handleCloseDialog = () => {
+    setDialogOpen(false)
+    setSelectedUser(null)
+  }
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState([])
 
+  const [selectedUser, setSelectedUser] = useState(null)
+  const handleViewDetails = (user)=>{
+    setSelectedUser(user)
+    setDialogOpen(true)
+    console.log(user)
+
+  }
 
   const [selectedPage, setSelectedPage] = useState(1)
   const onPageChange = (page)=>{
@@ -133,6 +146,7 @@ function AccountList() {
           <tbody>
             {users.map((user, index) => (
               <tr
+                onClick={() => handleViewDetails(user)}
                 key={index}
                 className={`
                   border-b transition-colors hover:bg-blue-50/50
@@ -183,11 +197,20 @@ function AccountList() {
                 </td>
               </tr>
             ))}
+
           </tbody>
+
         </table>
       <Pagination onPageChange={onPageChange} currentPage={selectedPage} totalPage={totalPage} limit={10}></Pagination>
       </div>
     </div>
+    {selectedUser && (
+        <AccountDetails
+          user={selectedUser} 
+          isOpen={dialogOpen}
+          onClose={handleCloseDialog}
+        />
+      )}
     </div>
   )
 }
