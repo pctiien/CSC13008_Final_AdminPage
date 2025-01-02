@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react'
 import { TimeRangeSelector } from './TimeRangeSelector'
 import { DateRangePicker } from '../../components/DateRangePicker'
-import { TopProductDisplay } from './TopProductDisplay'
+import { RevenueDisplay } from './RevenueDisplay'
 import reportService from '../../service/reportService'
 
 
-export default function TopRevenueProduct() {
+export default function RevenueReport() {
   const [timeRange, setTimeRange] = useState('day')
   const [dateRange, setDateRange] = useState({
     startDate: new Date(new Date().setMonth(new Date().getMonth() - 1)),  
@@ -21,7 +21,7 @@ export default function TopRevenueProduct() {
     setDateRange({...dateRange,startDate})
   }
   const fetchReportDate = async()=>{
-    const result = await reportService.getTopRevenueReport(timeRange, new Date(dateRange.startDate), new Date(dateRange.endDate))
+    const result = await reportService.getRevenueReport(timeRange, new Date(dateRange.startDate), new Date(dateRange.endDate))
     if(result && result.data && result.data )
     {
       setRevenueData(result.data.data)
@@ -48,7 +48,7 @@ export default function TopRevenueProduct() {
             />
       </div>
 
-      <TopProductDisplay  data={revenueData} />
+      <RevenueDisplay  data={revenueData} />
     </div>
   )
 }
