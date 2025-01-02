@@ -4,7 +4,6 @@ import Login from "./page/auth/Login";
 import AppLayout from "./ui/AppLayout";
 import { NavBarItemProvider } from "./context/NavBarItemContext";
 import AccountList from "./page/account/AccountList";
-import AccountDetails from "./page/account/AccountDetails";
 import CategoryList from "./page/category/CategoryList";
 import ManufacturerList from "./page/manufacturer/ManufacturerList";
 import OrderList from "./page/order/OrderList";
@@ -12,7 +11,7 @@ import EditProduct from "./page/product/EditProduct";
 import ProductList from "./page/product/ProductList";
 import AddProduct from "./page/product/AddProduct";
 import AdminProfile from "./page/profile/AdminProfile";
-import RevenueProduct from "./page/report/RevenueProduct";
+import RevenueReport from "./page/report/RevenueReport";
 import TopRevenueProduct from "./page/report/TopRevenueProduct";
 // import { AuthProvider } from "./hook/useAuth";
 
@@ -34,7 +33,7 @@ function App() {
                 <Route path="/add-product" element={<AddProduct />} />
                 <Route path="/edit-product/:id" element={<EditProduct />} />
                 <Route path="/admin-profile" element={<AdminProfile />} />
-                <Route path="/revenue-product" element={<RevenueProduct />} />
+                <Route path="/revenue-product" element={<RevenueReport />} />
                 <Route path="/top-revenue-product" element={<TopRevenueProduct />} />
 
 
