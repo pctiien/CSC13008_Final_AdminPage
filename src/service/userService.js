@@ -46,4 +46,19 @@ const toggleBanUser = async(userId)=>{
                 }
             })
 }
-export default {getAllUsers,getUserDetails,toggleBanUser}
+
+const updateProfile = async(profile)=>{
+    return await axiosClient.patch(`/users/update-profile`,{...profile})
+            .then(response=>{
+                return {
+                    data: response.data
+                }
+            })
+            .catch(err=>{
+                return{
+                    data: null,
+                    err
+                }
+            })
+}
+export default {getAllUsers,getUserDetails,toggleBanUser,updateProfile}
