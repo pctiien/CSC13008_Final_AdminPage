@@ -6,7 +6,8 @@ const axiosClient = axios.create({
     baseURL : baseUrl,
     headers : {
         "Content-Type": "application/json"
-    }
+    },
+    withCredentials: true
 })
 // axiosClient.interceptors.request.use((config) => {
 //     let token = null

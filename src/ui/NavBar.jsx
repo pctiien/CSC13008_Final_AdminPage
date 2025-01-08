@@ -2,14 +2,16 @@ import NavBarItem from '../feature/NavBar/NavBarItem';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-
+import { useAuth } from '../hooks/useAuth';
+import { Avatar, AvatarImage, AvatarFallback } from "../components/Avatar"
 const NavBar = ({ isOpen }) => {
     const navigate = useNavigate();
-
+    const {getUser} = useAuth()
+    const user = getUser()
     const [navState, setNavState] = useState([
         {
             title: 'Account',
-            redirect: '/',
+            redirect: '/account',
             icon: 'src/assets/account.svg',
         },
         {
@@ -73,6 +75,23 @@ const NavBar = ({ isOpen }) => {
         }
     };
 
+    const isValidUrl = (str) => {
+        try {
+          new URL(str);  
+          return true; 
+        } catch (_) {
+          return false;  
+        }
+      };
+    const getInitials = (name) => {
+        return name
+          .split(' ')
+          .map(word => word[0])
+          .join('')
+          .toUpperCase()
+      }
+    
+
     return (
         <div
             className={`pl-4 pt-4 pr-4 fixed h-screen ${isOpen ? 'translate-x-0 w-70' : '-translate-x-full w-16'} 
@@ -81,18 +100,23 @@ const NavBar = ({ isOpen }) => {
             <div className="flex flex-col justify-center">
                 <div className="flex items-center justify-center gap-4">
                     <div className="w-16 h-16">
-                        <img
-                            className="rounded-full"
-                            src="https://hotelair-react.pixelwibes.in/static/media/profile_av.387360c31abf06d6cc50.png"
-                            alt="avatar"
-                        />
+                         <Avatar className="h-full w-full">
+                                                               {
+                                                                   isValidUrl(user.avatar)  ? (
+                                                                       <AvatarImage src={user.avatar} alt={user.user_name} />
+                                                                       ) : (
+                                                                       <AvatarFallback>
+                                                                           {getInitials(user.user_name)} 
+                                                                       </AvatarFallback>
+                                                                   )
+                                                               }
+                                                    </Avatar>
                     </div>
                     {isOpen && (
                         <div className="flex flex-col">
                             <div className="text-lg text-transparent bg-clip-text bg-gradient-to-r from-violet-800 to-pink-800">
-                                Anny Glover
+                                {user.user_name}
                             </div>
-                            <span className="text-base text-gray-500"> Super Admin</span>
                         </div>
                     )}
                 </div>
