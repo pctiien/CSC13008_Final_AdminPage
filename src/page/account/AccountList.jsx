@@ -9,6 +9,8 @@ import Pagination from '../../components/Pagination'
 import SearchBar from '../../components/SearchBar'
 import {useSearchParams } from 'react-router-dom';
 import AccountDetails from './AccountDetails'
+import { toast, ToastContainer } from 'react-toastify';
+
 function AccountList() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -89,9 +91,15 @@ function AccountList() {
     try{
 
       const result = await userService.toggleBanUser(userId)
-      if(result)
+      if(!result || result.err)
       {
+        toast.error(result.err.response.data.message, { autoClose: 2000 });
+      }
+      else{
+        toast.success('Ban successfully', { autoClose: 2000 });
+
         fetchUserData()
+
       }
 
     }catch(err)
@@ -130,6 +138,7 @@ function AccountList() {
   return (
 
     <div>
+      <ToastContainer/>
       <SearchBar onChange={onSearchInputChange} placeHolder ="Filter by name or email..."></SearchBar>
       <div className="rounded-lg border bg-white shadow-sm mt-2"> 
       <div className="relative w-full overflow-auto">
@@ -160,7 +169,7 @@ function AccountList() {
           <tbody>
             {users.map((user, index) => (
               <tr
-                onClick={() => handleViewDetails(user.user_id)}
+                onClick={() => handleViewDetails(user.user_id,event)}
                 key={index}
                 className={`
                   border-b transition-colors hover:bg-blue-50/50

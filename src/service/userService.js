@@ -3,6 +3,7 @@ import axiosClient from './axiosClient'
 const getAllUsers = async(page,limit,searchKey,sortBy,sortOrder)=>{
     return await axiosClient.get('/users',{
         params: { page, limit, search: searchKey, sortBy, sortOrder },
+        
       })
             .then(response=>{
                 return {

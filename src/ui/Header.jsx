@@ -1,12 +1,47 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import authService from '../service/authService'
 import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-
+import { useAuth } from '../hooks/useAuth';
+import { Avatar, AvatarImage, AvatarFallback } from "../components/Avatar"
 const Header = ({ toggleNavBar, isNavBarOpen }) => {
+    const navigate = useNavigate();
 
+    const { getUser,userLogout } = useAuth();
+    const user = getUser()
 
+    const isValidUrl = (str) => {
+        try {
+          new URL(str);  
+          return true; 
+        } catch (_) {
+          return false;  
+        }
+      };
+    const getInitials = (name) => {
+        return name
+          .split(' ')
+          .map(word => word[0])
+          .join('')
+          .toUpperCase()
+      }
+    const handleLogOut = async() => {
 
+        const result = await authService.logOut() 
+
+        if(result)
+        {
+            console.log(result)
+        }
+
+        toast.success('Logout successful!', { autoClose: 2000 });
+        setTimeout(() => {
+            userLogout();
+            navigate('/'); 
+        }, 1500);
+
+    }
+    
     return (
         <div className=" w-full bg-gray-50 z-50 fixed block  ">
             <div className=" flex justify-start items-center py-2 ">
@@ -29,44 +64,32 @@ const Header = ({ toggleNavBar, isNavBarOpen }) => {
                 </div>
                 <div>
                 </div>
-                <div
-                    className={`transition-all duration-300 ease-in-out ${isNavBarOpen ? 'w-1/2' : 'w-2/3'
-                        } flex items-center px-4 bg-white text-gray-500 py-2 border border-gray-300 rounded-md`}>
-                    <svg
-                        className="svg-stroke search-icon"
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        fill="none"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    >
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                        <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0"></path>
-                        <path d="M21 21l-6 -6"></path>
-                    </svg>
-                    <input
-                        className="w-full outline-none"
-                        type="text"
-                        placeholder="Search..."
-                    />
-                </div>
+                
                 <div className="flex-1 flex items-center fixed right-0">
-                    <div className="px-4">
-                        <svg
-                            className="w-8 h-8"
-                            xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M10 5a2 2 0 0 1 4 0a7 7 0 0 1 4 6v3a4 4 0 0 0 2 3h-16a4 4 0 0 0 2 -3v-3a7 7 0 0 1 4 -6"></path><path d="M9 17v1a3 3 0 0 0 6 0v-1"></path><path d="M21 6.727a11.05 11.05 0 0 0 -2.794 -3.727"></path><path d="M3 6.727a11.05 11.05 0 0 1 2.792 -3.727"></path></svg>
-                    </div>
+                   
                     <div className="flex items-center gap-2 mr-4">
-                      
+                        <button 
+                        onClick={handleLogOut}
+                        className="focus:outline-dashed focus:outline-2 focus:outline-violet-500 cursor-pointer px-3 py-2 rounded-md text-white bg-gradient-to-r from-violet-500 to-pink-500 hover:bg-gradient-to-r hover:from-violet-700 hover:to-pink-700 "
+                         
+                         >
+                            Log out
+                        </button>
                         <div className="w-10 h-10 ">
-                            <img className="rounded-full hover:shadow-lg"
-                                src="https://hotelair-react.pixelwibes.in/static/media/profile_av.387360c31abf06d6cc50.png" alt="" />
+                           <Avatar className="h-full w-full">
+                                       {
+                                           isValidUrl(user.avatar)  ? (
+                                               <AvatarImage src={user.avatar} alt={user.user_name} />
+                                               ) : (
+                                               <AvatarFallback>
+                                                   {getInitials(user.user_name)} 
+                                               </AvatarFallback>
+                                           )
+                                       }
+                            </Avatar>
                         </div>
                         <span className="text-gray-600 bg-clip-text hover:bg-gradient-to-r hover:from-violet-800 hover:to-pink-800 hover:text-transparent">
-                            Michelle
+                            {user?.user_name}
                         </span>
                     </div>
                 </div>
