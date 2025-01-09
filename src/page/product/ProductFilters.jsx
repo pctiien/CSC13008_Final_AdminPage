@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Search } from 'lucide-react';
 
 const ProductFilters = ({ 
@@ -11,17 +11,35 @@ const ProductFilters = ({
   onCategoryChange,
   onManufacturerChange 
 }) => {
+  const [inputValue, setInputValue] = useState(searchTerm);
+
+  const handleSubmitSearch = () => {
+    onSearchChange({ target: { value: inputValue } });
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSubmitSearch();
+    }
+  };
+
   return (
     <div className="mb-6 flex gap-4">
       <div className="flex-1 relative">
-        <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
         <input
           type="text"
           placeholder="Search products..."
-          className="pl-10 w-full p-2 border rounded-lg"
-          value={searchTerm}
-          onChange={onSearchChange}
+          className="pl-10 pr-4 w-full p-2 border rounded-lg"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyPress={handleKeyPress}
         />
+        <button 
+          onClick={handleSubmitSearch}
+          className="absolute left-3 top-2.5 text-gray-400 hover:text-gray-600"
+        >
+          <Search size={20} />
+        </button>
       </div>
       <div className="w-48">
         <select

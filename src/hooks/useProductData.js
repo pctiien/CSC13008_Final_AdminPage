@@ -59,9 +59,10 @@ export const useProductData = () => {
           productCategoryMap.set(pc.product_id, categories);
         });
 
-        // Transform the products data
-        const transformedProducts = productsRes.data.map(product => ({
-          id: product.product_id, // Keep the same id format throughout
+        // Transform the products data - handle the case where productsRes.data might be nested
+        const productsData = productsRes.data.data || productsRes.data; // Handle both possible structures
+        const transformedProducts = productsData.map(product => ({
+          id: product.product_id,
           name: product.product_name,
           category: productCategoryMap.get(product.product_id)?.join(', ') || 'Uncategorized',
           manufacturer: product.manufacturer_id 
@@ -88,12 +89,12 @@ export const useProductData = () => {
           error: null
         });
       } catch (err) {
+        console.error('Error fetching data:', err);
         setData(prev => ({
           ...prev,
           loading: false,
           error: 'Error loading data. Please try again later.'
         }));
-        console.error('Error fetching data:', err);
       }
     };
 

@@ -6,7 +6,7 @@ import { useProductData } from '../../hooks/useProductData';
 
 const AddProduct = () => {
   const navigate = useNavigate();
-  const { categories, manufacturers, statuses, loading } = useProductData();
+  const { categories, manufacturers, statuses, loading, error: dataError } = useProductData();
   const initialFormState = {
     name: '',
     price: '',
