@@ -88,7 +88,7 @@ const Header = ({ toggleNavBar, isNavBarOpen }) => {
                                        }
                             </Avatar>
                         </div>
-                        <span className="text-gray-600 bg-clip-text hover:bg-gradient-to-r hover:from-violet-800 hover:to-pink-800 hover:text-transparent">
+                        <span className="text-gray-600 bg-clip-text hover:bg-gradient-to-r hover:from-violet-800 hover:to-pink-800 hover:text-transparent hidden sm:block">
                             {user?.user_name}
                         </span>
                     </div>

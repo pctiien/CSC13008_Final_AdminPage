@@ -39,7 +39,7 @@ export default function AdminProfile() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
         <ToastContainer/>
-      <div className="mx-auto max-w-4xl space-y-8">
+      <div className=" max-w-4xl space-y-8">
         
         {/* Header */}
         <div>
