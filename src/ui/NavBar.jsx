@@ -100,10 +100,10 @@ const NavBar = ({ isOpen }) => {
 
     return (
         <div
-            className={`pl-4 pt-4 pr-4 fixed h-screen ${isOpen ? 'translate-x-0 w-70' : '-translate-x-full w-16'} 
+            className={`pl-4 pt-4 pr-4 fixed h-screen  ${isOpen ? 'translate-x-0 w-70' : '-translate-x-full w-16'} 
                 transition-transform duration-300 ease-in-out z-50`}
         >
-            <div className="flex flex-col justify-center">
+            <div className="flex flex-col justify-center w-full">
                 <div className="flex items-center justify-center gap-4">
                     <div className="w-16 h-16">
                          <Avatar className="h-full w-full">
@@ -119,7 +119,7 @@ const NavBar = ({ isOpen }) => {
                                                     </Avatar>
                     </div>
                     {isOpen && (
-                        <div className="flex flex-col">
+                        <div className="flex flex-col hidden sm:block">
                             <div className="text-lg text-transparent bg-clip-text bg-gradient-to-r from-violet-800 to-pink-800">
                                 {user.user_name}
                             </div>
