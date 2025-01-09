@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
+import productService from '../../service/productService';
 import ProductFilters from './ProductFilters';
 import ProductTable from './ProductTable';
 import Pagination from './Pagination';
@@ -33,20 +33,19 @@ const ProductList = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({
+      const params = {
         page: currentPage,
         limit: itemsPerPage,
         sortField: sortConfig.field,
-        sortDir: sortConfig.direction
-      });
+        sortDir: sortConfig.direction,
+        ...(searchTerm && { search: searchTerm }),
+        ...(filterCategory && { category: filterCategory }),
+        ...(filterManufacturer && { manufacturer: filterManufacturer })
+      };
 
-      if (searchTerm) params.append('search', searchTerm);
-      if (filterCategory) params.append('category', filterCategory);
-      if (filterManufacturer) params.append('manufacturer', filterManufacturer);
-
-      const response = await axios.get('http://localhost:3000/products/json?' + params.toString());
+      const response = await productService.getAllProducts(params);
       
-      if (!response.data.success) {
+      if (!response.data?.success) {
         throw new Error('Failed to fetch products');
       }
       
@@ -77,12 +76,12 @@ const ProductList = () => {
     const fetchInitialData = async () => {
       try {
         const [categoriesRes, manufacturersRes] = await Promise.all([
-          axios.get('http://localhost:3000/categories/api'),
-          axios.get('http://localhost:3000/manufacturers/api')
+          productService.getCategories(),
+          productService.getManufacturers()
         ]);
         
-        setCategories(categoriesRes.data);
-        setManufacturers(manufacturersRes.data);
+        if (categoriesRes.data) setCategories(categoriesRes.data);
+        if (manufacturersRes.data) setManufacturers(manufacturersRes.data);
       } catch (err) {
         setError('Failed to load initial data');
       }
@@ -98,56 +97,47 @@ const ProductList = () => {
   useEffect(() => {
     const newParams = new URLSearchParams(searchParams);
     
-    if (searchTerm) {
-      newParams.set('search', searchTerm);
-    } else {
-      newParams.delete('search');
-    }
+    if (searchTerm) newParams.set('search', searchTerm);
+    else newParams.delete('search');
     
-    if (filterCategory) {
-      newParams.set('category', filterCategory);
-    } else {
-      newParams.delete('category');
-    }
+    if (filterCategory) newParams.set('category', filterCategory);
+    else newParams.delete('category');
     
-    if (filterManufacturer) {
-      newParams.set('manufacturer', filterManufacturer);
-    } else {
-      newParams.delete('manufacturer');
-    }
+    if (filterManufacturer) newParams.set('manufacturer', filterManufacturer);
+    else newParams.delete('manufacturer');
     
     newParams.set('page', currentPage.toString());
     newParams.set('sortField', sortConfig.field);
     newParams.set('sortDir', sortConfig.direction);
     
     setSearchParams(newParams);
-  }, [searchTerm, filterCategory, filterManufacturer, currentPage, sortConfig]);
+  }, [searchTerm, filterCategory, filterManufacturer, currentPage, sortConfig, setSearchParams]);
 
   const handleProductDeleted = async (productId) => {
     setIsDeletingProduct(true);
     setError(null);
     
     try {
-      await axios.delete(`http://localhost:3000/products/json/${productId}`);
+      const response = await productService.deleteProduct(productId);
       
-      // Calculate new total and total pages
-      const newTotalItems = totalItems - 1;
-      const newTotalPages = Math.ceil(newTotalItems / itemsPerPage);
-      
-      // Update total items
-      setTotalItems(newTotalItems);
-      
-      // Handle pagination
-      if (currentPage > newTotalPages) {
-        // If we're on a page that no longer exists, go to the last page
-        setCurrentPage(Math.max(1, newTotalPages));
+      if (response.data) {
+        // Calculate new total and total pages
+        const newTotalItems = totalItems - 1;
+        const newTotalPages = Math.ceil(newTotalItems / itemsPerPage);
+        
+        setTotalItems(newTotalItems);
+        
+        if (currentPage > newTotalPages) {
+          setCurrentPage(Math.max(1, newTotalPages));
+        } else {
+          await fetchProducts();
+        }
+        
+        setSuccessMessage('Product deleted successfully');
+        setTimeout(() => setSuccessMessage(''), 3000);
       } else {
-        // Refresh current page
-        await fetchProducts();
+        throw new Error('Failed to delete product');
       }
-      
-      setSuccessMessage('Product deleted successfully');
-      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       setError('Failed to delete product');
       throw error;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { X, Upload } from 'lucide-react';
-import axios from 'axios';
+import productService from '../../service/productService';
 
 const EditProduct = () => {
   const { id } = useParams();
@@ -37,18 +37,20 @@ const EditProduct = () => {
           statusesRes,
           productCategoriesRes
         ] = await Promise.all([
-          axios.get(`http://localhost:3000/products/json/${id}`),
-          axios.get('http://localhost:3000/categories/api'),
-          axios.get('http://localhost:3000/manufacturers/api'),
-          axios.get('http://localhost:3000/statuses/api'),
-          axios.get('http://localhost:3000/products/product-categories/api')
+          productService.getProductDetails(id),
+          productService.getCategories(),
+          productService.getManufacturers(),
+          productService.getStatuses(),
+          productService.getProductCategories()
         ]);
-  
+
+        if (!productRes.data) throw new Error('Failed to fetch product');
+
         // Filter product categories to get category IDs for this product
         const productCategoryIds = productCategoriesRes.data
           .filter(pc => pc.product_id === parseInt(id))
           .map(pc => pc.category_id);
-  
+
         setFormData({
           name: productRes.data.product_name,
           price: productRes.data.price,
@@ -56,60 +58,57 @@ const EditProduct = () => {
           status: productRes.data.status_id,
           category: productCategoryIds[0],
           manufacturer: productRes.data.manufacturer_id,
+          description: productRes.data.description,
           photos: productRes.data.photos || [],
           newPhotos: []
         });
-  
-        setCategories(categoriesRes.data);
-        setManufacturers(manufacturersRes.data);
-        setStatuses(statusesRes.data.filter(status => status.status_type === "PRODUCT"));
+
+        if (categoriesRes.data) setCategories(categoriesRes.data);
+        if (manufacturersRes.data) setManufacturers(manufacturersRes.data);
+        if (statusesRes.data) {
+          setStatuses(statusesRes.data.filter(status => status.status_type === "PRODUCT"));
+        }
+        
         setLoading(false);
       } catch (err) {
         setError('Failed to load product data');
         setLoading(false);
       }
     };
-  
+
     fetchProductData();
   }, [id]);
 
   const validateForm = () => {
     const errors = {};
     
-    // Validate product name
     if (!formData.name || formData.name.trim().length < 2) {
       errors.name = 'Product name must be at least 2 characters long';
     }
     
-    // Validate price
     const price = parseFloat(formData.price);
     if (!price || isNaN(price) || price <= 0) {
       errors.price = 'Price must be a positive number';
     }
     
-    // Validate stock
     const stock = parseInt(formData.stock);
     if (isNaN(stock) || stock < 0) {
       errors.stock = 'Stock must be a non-negative number';
     }
     
-    // Validate status
     if (!formData.status) {
       errors.status = 'Please select a status';
     }
     
-    // Validate manufacturer
     if (!formData.manufacturer) {
       errors.manufacturer = 'Please select a manufacturer';
     }
     
-    // Validate category
     if (!formData.category) {
       errors.category = 'Please select a category';
     }
 
-    // Validate photo sizes if new photos are being uploaded
-    if (formData.newPhotos && formData.newPhotos.length > 0) {
+    if (formData.newPhotos?.length > 0) {
       const maxSize = 5 * 1024 * 1024; // 5MB
       const invalidSizePhotos = formData.newPhotos.filter(photo => photo.size > maxSize);
       if (invalidSizePhotos.length > 0) {
@@ -146,12 +145,13 @@ const EditProduct = () => {
 
   const handleRemovePhoto = async (photoId) => {
     try {
-      if (photoId === 'main') {
-        const response = await axios.delete(`http://localhost:3000/products/json/${id}/photo/main`);
-        
+      const response = await productService.deleteProductPhoto(id, photoId);
+      
+      if (response.data) {
         setFormData(prev => {
-          const updatedPhotos = prev.photos.filter(photo => photo.id !== 'main');  
-          if (response.data.newMainPhoto) {
+          // Handle main photo updates
+          if (photoId === 'main' && response.data.newMainPhoto) {
+            const updatedPhotos = prev.photos.filter(photo => photo.id !== 'main');
             const newMainPhotoIndex = updatedPhotos.findIndex(
               photo => photo.url.endsWith(response.data.newMainPhoto)
             );
@@ -166,19 +166,15 @@ const EditProduct = () => {
                 ]
               };
             }
+            return { ...prev, photos: updatedPhotos };
           }
           
+          // Handle regular photo removal
           return {
             ...prev,
-            photos: updatedPhotos
+            photos: prev.photos.filter(photo => photo.id !== photoId)
           };
         });
-      } else {
-        await axios.delete(`http://localhost:3000/products/json/${id}/photos/${photoId}`);
-        setFormData(prev => ({
-          ...prev,
-          photos: prev.photos.filter(photo => photo.id !== photoId)
-        }));
       }
     } catch (err) {
       setError('Failed to remove photo');
@@ -212,6 +208,7 @@ const EditProduct = () => {
       formDataToSend.append('status_id', formData.status);
       formDataToSend.append('category_id', formData.category);
       formDataToSend.append('manufacturer_id', formData.manufacturer);
+      formDataToSend.append('description', formData.description);
 
       if (formData.newPhotos.length > 0) {
         formData.newPhotos.forEach(photo => {
@@ -219,18 +216,18 @@ const EditProduct = () => {
         });
       }
 
-      await axios.put(`http://localhost:3000/products/json/${id}`, formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      const response = await productService.updateProduct(id, formDataToSend);
 
-      setSuccess('Product updated successfully!');
-      setTimeout(() => {
-        navigate('/product');
-      }, 1500);
+      if (response.data?.success) {
+        setSuccess('Product updated successfully!');
+        setTimeout(() => {
+          navigate('/product');
+        }, 1500);
+      } else {
+        throw new Error(response.data?.message || 'Failed to update product');
+      }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update product');
+      setError(err.message || 'Failed to update product');
     } finally {
       setIsSubmitting(false);
     }
@@ -244,16 +241,6 @@ const EditProduct = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="p-6">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative">
-          {error}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
@@ -263,6 +250,12 @@ const EditProduct = () => {
       {success && (
         <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
           {success}
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {error}
         </div>
       )}
 
@@ -401,6 +394,20 @@ const EditProduct = () => {
           </div>
         </div>
 
+        {/* Description */}
+        <div className="mt-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Description
+          </label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            rows="4"
+            className="w-full p-2 border rounded-lg"
+          />
+        </div>
+
         {/* Photo Upload Section */}
         <div className="mt-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -426,7 +433,7 @@ const EditProduct = () => {
               </div>
             ))}
             
-            {/* New Photos Preview */}
+            {/* New Photos */}
             {formData.newPhotos.map((photo, index) => (
               <div key={index} className="relative">
                 <img

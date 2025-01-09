@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, X } from 'lucide-react';
-import axios from 'axios';
-import { useProductData } from '../../hooks/useProductData';
+import productService from '../../service/productService';
 
 const AddProduct = () => {
   const navigate = useNavigate();
-  const { categories, manufacturers, statuses, loading, error: dataError } = useProductData();
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState([]);
+  const [manufacturers, setManufacturers] = useState([]);
+  const [statuses, setStatuses] = useState([]);
+  
   const initialFormState = {
     name: '',
     price: '',
@@ -23,6 +26,31 @@ const AddProduct = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        const [categoriesRes, manufacturersRes, statusesRes] = await Promise.all([
+          productService.getCategories(),
+          productService.getManufacturers(),
+          productService.getStatuses()
+        ]);
+
+        if (categoriesRes.data) setCategories(categoriesRes.data);
+        if (manufacturersRes.data) setManufacturers(manufacturersRes.data);
+        if (statusesRes.data) {
+          setStatuses(statusesRes.data.filter(status => status.status_type === "PRODUCT"));
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        setError('Failed to load initial data');
+        setLoading(false);
+      }
+    };
+
+    fetchInitialData();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -70,44 +98,36 @@ const AddProduct = () => {
   const validateForm = () => {
     const errors = [];
     
-    // Validate product name
     if (!formData.name || formData.name.trim().length < 2) {
       errors.push('Product name must be at least 2 characters long');
     }
     
-    // Validate price
     const price = parseFloat(formData.price);
     if (!price || isNaN(price) || price <= 0) {
       errors.push('Price must be a positive number');
     }
     
-    // Validate stock
     const stock = parseInt(formData.stock);
     if (isNaN(stock) || stock < 0) {
       errors.push('Stock must be a non-negative number');
     }
     
-    // Validate status
     if (!formData.status_id) {
       errors.push('Please select a status');
     }
     
-    // Validate manufacturer
     if (!formData.manufacturer_id) {
       errors.push('Please select a manufacturer');
     }
     
-    // Validate categories
     if (!formData.categories || formData.categories.length === 0) {
       errors.push('Please select at least one category');
     }
     
-    // Validate description
     if (!formData.description || formData.description.trim().length < 10) {
       errors.push('Description must be at least 10 characters long');
     }
     
-    // Validate image sizes
     const maxSize = 5 * 1024 * 1024; // 5MB
     const invalidSizeImages = images.filter(img => img.size > maxSize);
     if (invalidSizeImages.length > 0) {
@@ -133,6 +153,7 @@ const AddProduct = () => {
     try {
       const formDataToSend = new FormData();
       
+      // Append form fields
       Object.entries(formData).forEach(([key, value]) => {
         if (Array.isArray(value)) {
           value.forEach(v => formDataToSend.append(`${key}[]`, v));
@@ -141,21 +162,18 @@ const AddProduct = () => {
         }
       });
   
+      // Append images
       images.forEach(image => {
         formDataToSend.append('images', image);
       });
   
-      const response = await axios.post('http://localhost:3000/products/json', formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      const response = await productService.createProduct(formDataToSend);
   
-      if (response.data.success) {
+      if (response.data?.success) {
         setSuccess('Product created successfully! You can continue adding more products.');
         resetForm();
       } else {
-        setError(response.data.message || 'Error creating product');
+        setError(response.data?.message || 'Error creating product');
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Error creating product');

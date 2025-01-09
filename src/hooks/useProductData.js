@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import productService from '../service/productService';
 
 export const useProductData = () => {
   const [data, setData] = useState({
@@ -29,11 +29,11 @@ export const useProductData = () => {
           productCategoriesRes,
           statusesRes
         ] = await Promise.all([
-          axios.get('http://localhost:3000/products/json'),
-          axios.get('http://localhost:3000/categories/api'),
-          axios.get('http://localhost:3000/manufacturers/api'),
-          axios.get('http://localhost:3000/products/product-categories/api'),
-          axios.get('http://localhost:3000/statuses/api')
+          productService.getAllProducts(),
+          productService.getCategories(),
+          productService.getManufacturers(),
+          productService.getProductCategories(),
+          productService.getStatuses()
         ]);
 
         // Create lookup maps
@@ -49,7 +49,6 @@ export const useProductData = () => {
             .map(status => [status.status_id, status.status_name])
         );
 
-        // Create product-category lookup
         const productCategoryMap = new Map();
         productCategoriesRes.data.forEach(pc => {
           const categories = productCategoryMap.get(pc.product_id) || [];
@@ -59,8 +58,7 @@ export const useProductData = () => {
           productCategoryMap.set(pc.product_id, categories);
         });
 
-        // Transform the products data - handle the case where productsRes.data might be nested
-        const productsData = productsRes.data.data || productsRes.data; // Handle both possible structures
+        const productsData = productsRes.data.data || productsRes.data;
         const transformedProducts = productsData.map(product => ({
           id: product.product_id,
           name: product.product_name,
