@@ -53,6 +53,7 @@ const ProductTable = ({
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Manufacturer</th>
             <SortableHeader field="price">Price</SortableHeader>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
+            <SortableHeader field="total_purchase">Purchases</SortableHeader> 
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
             <SortableHeader field="created_at">Created At</SortableHeader>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -67,6 +68,7 @@ const ProductTable = ({
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.manufacturer}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${product.price.toFixed(2)}</td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.stock}</td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{product.total_purchase}</td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(product.status)}`}>
                   {formatStatusDisplay(product.status)}

@@ -70,6 +70,7 @@ export const useProductData = () => {
           manufacturer_id: product.manufacturer_id,
           price: product.price,
           stock: product.remaining,
+          total_purchase: product.total_purchase,
           status: product.status_id 
             ? statusMap.get(product.status_id) 
             : 'Unknown',

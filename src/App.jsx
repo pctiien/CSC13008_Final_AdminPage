@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import React from 'react';
-import LogIn from './page/auth/LogIn';
+import LogIn from './page/auth/Login';
 import AppLayout from './ui/AppLayout';
 import { NavBarItemProvider } from './context/NavBarItemContext';
 import AccountList from './page/account/AccountList';

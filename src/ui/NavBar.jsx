@@ -61,13 +61,7 @@ const NavBar = ({ isOpen }) => {
                     ref: '/top-revenue-product'
                 },
             ]
-        },
-        {
-            title: 'Profile',
-            redirect: '/admin-profile',
-            icon: '/src/assets/profile.svg',
-        },
-
+        }
     ]);
 
     const [selectedItem, setSelectedItem] = useState(null);

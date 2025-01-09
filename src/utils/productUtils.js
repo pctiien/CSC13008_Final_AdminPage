@@ -37,7 +37,7 @@ export const sortProducts = (products, sortConfig) => {
         : bValue - aValue;
     }
     
-    if (sortConfig.field === 'price') {
+    if (['price', 'total_purchase'].includes(sortConfig.field)) {
       return sortConfig.direction === 'asc' 
         ? aValue - bValue 
         : bValue - aValue;
