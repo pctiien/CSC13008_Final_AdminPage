@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
-import axios from 'axios';
+import categoryService from '../../service/categoryService';
 
 const CategoryList = () => {
   const [categories, setCategories] = useState([]);
@@ -12,14 +12,15 @@ const CategoryList = () => {
   const [newCategory, setNewCategory] = useState({ category_name: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch categories
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/categories/api', {
-        withCredentials: true
-      });
-      setCategories(response.data);
-      setError(null);
+      const response = await categoryService.getAllCategories();
+      if (response.data) {
+        setCategories(response.data);
+        setError(null);
+      } else {
+        throw new Error('Failed to fetch categories');
+      }
     } catch (err) {
       setError('Failed to fetch categories. Please try again later.');
       console.error('Error fetching categories:', err);
@@ -28,12 +29,10 @@ const CategoryList = () => {
     }
   };
 
-  // Initial fetch on component mount
   useEffect(() => {
     fetchCategories();
   }, []);
 
-  // Add new category
   const handleAddCategory = async () => {
     if (!newCategory.category_name.trim()) {
       return;
@@ -41,13 +40,17 @@ const CategoryList = () => {
 
     setIsSubmitting(true);
     try {
-      const response = await axios.post('http://localhost:3000/categories/api', {
+      const response = await categoryService.createCategory({
         category_name: newCategory.category_name
       });
       
-      setCategories([...categories, response.data]);
-      setNewCategory({ category_name: '' });
-      setIsAddModalOpen(false);
+      if (response.data) {
+        setCategories([...categories, response.data]);
+        setNewCategory({ category_name: '' });
+        setIsAddModalOpen(false);
+      } else {
+        throw new Error('Failed to add category');
+      }
     } catch (err) {
       setError('Failed to add category. Please try again.');
       console.error('Error adding category:', err);
@@ -56,12 +59,17 @@ const CategoryList = () => {
     }
   };
 
-  // Delete category
   const handleDeleteCategory = async (categoryId) => {
     if (window.confirm('Are you sure you want to delete this category?')) {
       try {
-        await axios.delete(`http://localhost:3000/categories/api/${categoryId}`);
-        setCategories(categories.filter(cat => cat.category_id !== categoryId));
+        const response = await categoryService.deleteCategory(categoryId);
+        
+        if (response.status === 204 || response.data) {
+          setCategories(categories.filter(cat => cat.category_id !== categoryId));
+          setError(null);
+        } else {
+          throw new Error('Failed to delete category');
+        }
       } catch (err) {
         setError('Failed to delete category. Please try again.');
         console.error('Error deleting category:', err);
@@ -69,7 +77,6 @@ const CategoryList = () => {
     }
   };
 
-  // Update category
   const handleUpdateCategory = async () => {
     if (!selectedCategory || !selectedCategory.category_name.trim()) {
       return;
@@ -77,14 +84,20 @@ const CategoryList = () => {
 
     setIsSubmitting(true);
     try {
-      const response = await axios.put(`http://localhost:3000/categories/api/${selectedCategory.category_id}`, {
-        category_name: selectedCategory.category_name
-      });
-      setCategories(categories.map(cat => 
-        cat.category_id === selectedCategory.category_id ? response.data : cat
-      ));
-      setIsEditModalOpen(false);
-      setSelectedCategory(null);
+      const response = await categoryService.updateCategory(
+        selectedCategory.category_id, 
+        { category_name: selectedCategory.category_name }
+      );
+
+      if (response.data) {
+        setCategories(categories.map(cat => 
+          cat.category_id === selectedCategory.category_id ? response.data : cat
+        ));
+        setIsEditModalOpen(false);
+        setSelectedCategory(null);
+      } else {
+        throw new Error('Failed to update category');
+      }
     } catch (err) {
       setError('Failed to update category. Please try again.');
       console.error('Error updating category:', err);
