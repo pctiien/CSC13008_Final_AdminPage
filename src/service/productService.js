@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const baseURL = 'http://localhost:3000'
+const baseURL = 'http://localhost:3000';
+// const baseURL = 'https://cara.c0smic.tech';
 
 const getAllProducts = async (params = {}) => {
     const queryParams = new URLSearchParams(params).toString()

@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 const baseURL = 'http://localhost:3000';
+// const baseURL = 'https://cara.c0smic.tech';
 
 const getAllManufacturers = async () => {
     return await axios.get(`${baseURL}/manufacturers/api`, {

@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const baseUrl = 'http://localhost:3000'
+const baseUrl = 'http://localhost:3000';
+// const baseUrl = 'https://cara.c0smic.tech';
 
 const axiosClient = axios.create({
     baseURL : baseUrl,
