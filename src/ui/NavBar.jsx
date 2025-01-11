@@ -4,19 +4,27 @@ import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { Avatar, AvatarImage, AvatarFallback } from "../components/Avatar"
+
+import accountIcon from '@/assets/account.svg';
+import productIcon from '@/assets/product.svg';
+import categoryIcon from '@/assets/category.svg';
+import manufacturerIcon from '@/assets/manufacturer.svg';
+import orderIcon from '@/assets/order.svg';
+import reportIcon from '@/assets/report.svg';
+
 const NavBar = ({ isOpen }) => {
     const navigate = useNavigate();
-    const {getUser} = useAuth()
-    const user = getUser()
+    const {getUser} = useAuth();
+    const user = getUser();
     const [navState, setNavState] = useState([
         {
             title: 'Account',
             redirect: '/account',
-            icon: 'src/assets/account.svg',
+            icon: accountIcon,
         },
         {
             title: 'Product',
-            icon: '/src/assets/product.svg',
+            icon: productIcon,
             subItems: [
                 {
                     id: 1,
@@ -32,23 +40,23 @@ const NavBar = ({ isOpen }) => {
         },
         {
             title: 'Category',
-            icon: '/src/assets/category.svg',
+            icon: categoryIcon,
             redirect: '/category',
             subItems: [ ]
         },
         {
             title: 'Manufacturer',
-            icon: '/src/assets/manufacturer.svg',
+            icon: manufacturerIcon,
             redirect: '/manufacturer',
         },
         {
             title: 'Order',
             redirect: '/order',
-            icon: '/src/assets/order.svg',
+            icon: orderIcon,
         },
         {
             title: 'Report',
-            icon: '/src/assets/report.svg',
+            icon: reportIcon,
             subItems: [
                 {
                     id: 1,
