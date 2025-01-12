@@ -1,7 +1,7 @@
 import axiosClient from './axiosClient'
 
 const logIn = async(email,password)=>{
-    return await axiosClient.post('/auth/login/json',{email,password},{withCredentials: true})
+    return await axiosClient.post('/auth/login/json',{email,password},{withCredentials: false})
             .then(response=>{
                 return {
                     data: response

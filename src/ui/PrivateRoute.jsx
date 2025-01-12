@@ -4,7 +4,6 @@ import { useAuth } from '../hooks/useAuth';
 
 const PrivateRoute = () => {
   const { user } = useAuth(); // Lấy thông tin user từ context
-
   if (!user) {
     // Nếu không có user, chuyển hướng về trang login
     return <Navigate to="/" replace />;
