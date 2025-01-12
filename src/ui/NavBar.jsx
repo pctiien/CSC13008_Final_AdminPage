@@ -11,6 +11,7 @@ import categoryIcon from '@/assets/category.svg';
 import manufacturerIcon from '@/assets/manufacturer.svg';
 import orderIcon from '@/assets/order.svg';
 import reportIcon from '@/assets/report.svg';
+import profileIcon from '@/assets/profile.svg';
 
 const NavBar = ({ isOpen }) => {
     const navigate = useNavigate();
@@ -69,7 +70,12 @@ const NavBar = ({ isOpen }) => {
                     ref: '/top-revenue-product'
                 },
             ]
-        }
+        },
+        {
+            title: 'Profile',
+            icon: profileIcon,
+            redirect: '/admin-profile',
+        },
     ]);
 
     const [selectedItem, setSelectedItem] = useState(null);
