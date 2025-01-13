@@ -61,7 +61,6 @@ const OrderList = ()=>{
                 className="p-2 rounded-[2px]"
                 name="paymentStatus" 
                 id="paymentStatus"
-                defaultValue="pending"
                 value ={selectedStatus}
                 >
                 <option value="" >

@@ -82,6 +82,7 @@ const OrderDetails = ({ orderId,isOpen,onClose }) =>{
                 
                     </tr>
             </thead>
+            <tbody>
             {
                 order.OrderDetails && order.OrderDetails.map((od,index)=>{
                     return (
@@ -119,6 +120,7 @@ const OrderDetails = ({ orderId,isOpen,onClose }) =>{
                     )
                 })
               }
+            </tbody>
             </table>
               
               
